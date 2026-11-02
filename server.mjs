@@ -27,7 +27,7 @@ app.use((req,res,next)=>{
  if(production){
   res.setHeader('Strict-Transport-Security','max-age=31536000');
   res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
-  if(!req.secure&&!['/health','/ready'].includes(req.path))return res.redirect(308,origin+req.originalUrl);
+  if((!req.secure||req.hostname!==parsedOrigin.hostname)&&!['/health','/ready'].includes(req.path))return res.redirect(308,origin+req.originalUrl);
  }
  res.on('finish',()=>{if(res.statusCode>=500)console.error(JSON.stringify({event:'http_error',requestId,status:res.statusCode}));});next();
 });

@@ -13,8 +13,8 @@ try{
  for(let i=0;i<100;i++){try{if((await fetch(base+'/ready')).ok){ready=true;break;}}catch{}if(web.exitCode!==null||worker.exitCode!==null)break;await new Promise(r=>setTimeout(r,100));}
  assert.ok(ready,'Production web/worker did not become ready; check isolated service logs.');
  const redirect=await fetch(base+'/',{redirect:'manual'});assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),'https://goldswap.app/');
- const home=await fetch(base+'/',{headers:{'X-Forwarded-Proto':'https'}});assert.equal(home.status,200);assert.match(home.headers.get('content-security-policy')||'',/frame-ancestors 'none'/);assert.equal(home.headers.get('x-frame-options'),'DENY');assert.match(home.headers.get('strict-transport-security')||'',/31536000/);assert.ok(home.headers.get('x-request-id'));assert.match(await home.text(),/https:\/\/goldswap.app/);
- const robots=await fetch(base+'/robots.txt',{headers:{'X-Forwarded-Proto':'https'}});assert.match(await robots.text(),/Disallow: \//);
+ const home=await fetch(base+'/',{headers:{'X-Forwarded-Proto':'https',Host:'goldswap.app'}});assert.equal(home.status,200);assert.match(home.headers.get('content-security-policy')||'',/frame-ancestors 'none'/);assert.equal(home.headers.get('x-frame-options'),'DENY');assert.match(home.headers.get('strict-transport-security')||'',/31536000/);assert.ok(home.headers.get('x-request-id'));assert.match(await home.text(),/https:\/\/goldswap.app/);
+ const robots=await fetch(base+'/robots.txt',{headers:{'X-Forwarded-Proto':'https',Host:'goldswap.app'}});assert.match(await robots.text(),/Disallow: \//);
  console.log('Production web/worker readiness, HTTPS redirect, security headers and canonical checks passed.');
 }finally{
  const stop=async(p:typeof web)=>{if(p.exitCode!==null)return;const exit=new Promise<void>(r=>p.once('exit',()=>r()));p.kill('SIGTERM');const deadline=setTimeout(()=>p.kill('SIGKILL'),5000);try{await exit;}finally{clearTimeout(deadline);}};

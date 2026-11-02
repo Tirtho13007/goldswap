@@ -9,7 +9,10 @@ export interface Sql {
 }
 export async function connectDatabase(): Promise<Sql> {
   if (process.env.DATABASE_URL) {
-    const pool = new Pool({connectionString: process.env.DATABASE_URL, max: Number(process.env.DB_POOL_MAX || 5), connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000});
+    const connection=new URL(process.env.DATABASE_URL);
+    const verifiedTls=process.env.NODE_ENV==='production'&&!['localhost','127.0.0.1','[::1]'].includes(connection.hostname);
+    if(verifiedTls)for(const option of ['sslmode','sslrootcert','sslcert','sslkey'])connection.searchParams.delete(option);
+    const pool = new Pool({connectionString: connection.toString(), ...(verifiedTls?{ssl:{rejectUnauthorized:true,ca:process.env.DATABASE_CA_CERT||undefined}}:{}), max: Number(process.env.DB_POOL_MAX || 5), connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000});
     pool.on('error',()=>console.error('Database pool connection failed'));
     const wrap = (client: any): Sql => ({
       query: (sql, params) => client.query(sql, params),

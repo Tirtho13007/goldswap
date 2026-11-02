@@ -48,3 +48,16 @@ Verify domain ownership, SPF and DKIM with the provider and publish the reviewed
 No live hosting, DNS, mail sender, scanner service, real-wallet transfer or legal approval is implied by this source release. Record real acceptance evidence separately.
 
 References: [Express proxy configuration](https://expressjs.com/en/guide/behind-proxies.html), [node-postgres transactions](https://node-postgres.com/features/transactions), [PostgreSQL backup](https://www.postgresql.org/docs/current/app-pgdump.html).
+
+## Heroku-specific handoff
+
+- Connect this private GitHub repository in the Heroku Deploy tab. Select `main`; wait for the Validate GoldSwap check before manual deployment. Avoid automatic production deploys until the first live acceptance passes.
+- Provision PostgreSQL, one always-on web process and one always-on worker. Sleeping services are unsuitable for settlement/email jobs. The app template does not purchase or provision a database automatically.
+- All non-local production PostgreSQL connections explicitly require TLS with certificate verification. If the chosen database uses a private/self-signed certificate, supply a trusted provider CA in `DATABASE_CA_CERT`. If the plan does not supply a verifiable certificate chain, choose a database endpoint that does; do not disable certificate verification. This may require an externally managed PostgreSQL endpoint even when web/worker run on Heroku.
+- Common Runtime dynos are not a private TCP mesh. Run the scanner on an actual protected private network (for example an appropriate Private Spaces setup), or behind a TLS gateway with client-certificate authentication. For the latter set `CLAMAV_TLS=true`, scanner host/port, trusted CA if required, `CLAMAV_CLIENT_CERT` and `CLAMAV_CLIENT_KEY`. The gateway forwards the clamd INSTREAM protocol. Never expose unauthenticated plain clamd to the internet. These services/certificates must be provisioned separately.
+- Add `goldswap.app` in Heroku Settings → Domains. Copy the exact generated `*.herokudns.com` target into the DNS provider's apex ALIAS/ANAME/CNAME-flattening record. Do not invent a fixed A record or point the apex to a guessed herokuapp hostname. If `www` is used, add it as a separate domain and record.
+- Enable Heroku Automated Certificate Management and wait until the certificate is issued. Test `https://goldswap.app` before opening registration. Direct Heroku routing normally uses `TRUST_PROXY_HOPS=1`; review it again if adding a CDN.
+- Configure managed backups/restore alerts and mail provider verification. Run bootstrap in a one-off process, then remove `BOOTSTRAP_PASSWORD`; a temporary config change creates another release and may rerun the release migration (which is idempotent).
+- Owner still needs to supply the Heroku app name/account, DNS-provider access and live service credentials through secure settings. No Heroku resources, billing, DNS records or certificates were changed by this code release.
+
+Heroku references: [release phase](https://devcenter.heroku.com/articles/release-phase), [custom domains](https://devcenter.heroku.com/articles/custom-domains), [Postgres connections](https://devcenter.heroku.com/articles/connecting-heroku-postgres).
