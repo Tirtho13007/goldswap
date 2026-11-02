@@ -1,0 +1,7 @@
+{
+  "name": "GoldSwap",
+  "description": "GoldSwap React landing page and interactive design preview",
+  "keywords": ["react", "typescript", "goldswap", "threejs"],
+  "env": { "NODE_ENV": { "value": "production" } },
+  "buildpacks": [{ "url": "heroku/nodejs" }]
+}

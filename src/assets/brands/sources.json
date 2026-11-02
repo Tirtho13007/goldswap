@@ -1,0 +1,12 @@
+{
+  "paypal": "https://raw.githubusercontent.com/activemerchant/payment_icons/master/app/assets/images/payment_icons/paypal.svg",
+  "stripe": "https://raw.githubusercontent.com/activemerchant/payment_icons/master/app/assets/images/payment_icons/stripe.svg",
+  "payoneer": "https://www.payoneer.com/wp-content/themes/payo/assets/img/payoneer-dark-logo.svg",
+  "skrill": "https://www.skrill.com/typo3conf/ext/sitepackage/Resources/Public/images/icons/Skrill_Logo_With_Tagline.svg",
+  "western-union": "https://www.westernunion.com/content/dam/wu/logo/logo.wu.big.svg",
+  "sslcommerz": "https://sslcommerz.com/wp-content/uploads/2021/11/logo.png",
+  "bkash": "https://logotyp.us/file/bkash.svg",
+  "nagad": "https://logotyp.us/file/nagad.svg",
+  "mastercard": "https://github.com/activemerchant/payment_icons",
+  "visa": "https://github.com/activemerchant/payment_icons"
+}

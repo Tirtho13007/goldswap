@@ -1,0 +1,60 @@
+{
+  "name": "goldswap",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "start": "node --env-file-if-exists=.env --import tsx server.mjs",
+    "heroku-postbuild": "npm run build",
+    "preview": "vite preview --host 0.0.0.0",
+    "dev:api": "node --env-file-if-exists=.env --import tsx --watch server.mjs",
+    "db:migrate": "node --env-file-if-exists=.env --import tsx backend/cli.ts migrate",
+    "admin:bootstrap": "node --env-file-if-exists=.env --import tsx backend/cli.ts bootstrap",
+    "dev:mail": "node --env-file-if-exists=.env --import tsx backend/cli.ts mail",
+    "typecheck:backend": "tsc -p backend/tsconfig.json",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "demo:seed": "node --env-file-if-exists=.env --import tsx backend/cli.ts seed-demo"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@scure/base": "^2.4.0",
+    "cryptocurrency-icons": "^0.18.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.7.2",
+    "flag-icons": "^7.6.0",
+    "google-auth-library": "^11.3.2",
+    "lucide-react": "^0.468.0",
+    "nodemailer": "^10.3.1",
+    "pdfkit": "^0.20.2",
+    "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.180.0",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.14",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pdfkit": "^0.17.7",
+    "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "axe-core": "^4.14.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.9",
+    "vite-plugin-singlefile": "^2.3.4"
+  }
+}

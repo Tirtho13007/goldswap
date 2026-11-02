@@ -1,0 +1,20 @@
+CREATE TABLE platform_gold_settings(id integer PRIMARY KEY CHECK(id=1),trades_enabled boolean NOT NULL DEFAULT false,rates_confirmed boolean NOT NULL DEFAULT false,physical_fee_basis text CHECK(physical_fee_basis IN('additional_gold','deduct_gold')),updated_at timestamptz NOT NULL DEFAULT now());
+INSERT INTO platform_gold_settings(id) VALUES (1);
+CREATE TABLE gold_stock(id integer PRIMARY KEY CHECK(id=1),available numeric(78,0) NOT NULL DEFAULT 0 CHECK(available>=0),reserved numeric(78,0) NOT NULL DEFAULT 0 CHECK(reserved>=0));
+INSERT INTO gold_stock(id) VALUES (1);
+CREATE TABLE gold_accounts(user_id uuid PRIMARY KEY REFERENCES users(id),available numeric(78,0) NOT NULL DEFAULT 0 CHECK(available>=0),locked numeric(78,0) NOT NULL DEFAULT 0 CHECK(locked>=0),reserved numeric(78,0) NOT NULL DEFAULT 0 CHECK(reserved>=0));
+CREATE TABLE treasury_accounts(asset text PRIMARY KEY,available numeric(78,0) NOT NULL DEFAULT 0 CHECK(available>=0));
+CREATE TABLE inventory_receipts(id uuid PRIMARY KEY,reference text NOT NULL UNIQUE,gold_atoms numeric(78,0) NOT NULL CHECK(gold_atoms>0),proof_id uuid NOT NULL REFERENCES private_files(id),actor_id uuid NOT NULL REFERENCES users(id),created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE gold_quotes(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id),side text NOT NULL CHECK(side IN('buy','sell','withdraw')),asset text NOT NULL,input_atoms numeric(78,0) NOT NULL CHECK(input_atoms>0),output_atoms numeric(78,0) NOT NULL CHECK(output_atoms>0),pricing jsonb NOT NULL,expires_at timestamptz NOT NULL,used boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE gold_orders(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id),quote_id uuid NOT NULL UNIQUE REFERENCES gold_quotes(id),idempotency_key uuid NOT NULL,side text NOT NULL,asset text NOT NULL,input_atoms numeric(78,0) NOT NULL,output_atoms numeric(78,0) NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(user_id,idempotency_key));
+CREATE TABLE gold_trades(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id),plan text NOT NULL,principal_atoms numeric(78,0) NOT NULL CHECK(principal_atoms>0),profit_atoms numeric(78,0) NOT NULL CHECK(profit_atoms>0),rate_bps integer NOT NULL,policy_version text NOT NULL,status text NOT NULL DEFAULT 'active' CHECK(status IN('active','settled')),starts_at timestamptz NOT NULL DEFAULT now(),matures_at timestamptz NOT NULL,settled_at timestamptz,idempotency_key uuid NOT NULL,UNIQUE(user_id,idempotency_key));
+CREATE INDEX gold_trades_due_idx ON gold_trades(status,matures_at);
+CREATE TABLE physical_gold_requests(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id),kind text NOT NULL CHECK(kind IN('order','withdrawal')),gross_atoms numeric(78,0) NOT NULL CHECK(gross_atoms>0),fee_atoms numeric(78,0) NOT NULL CHECK(fee_atoms>0),delivery_atoms numeric(78,0) NOT NULL CHECK(delivery_atoms>=500000000),reserved_atoms numeric(78,0) NOT NULL CHECK(reserved_atoms>0),fee_basis text NOT NULL,status text NOT NULL DEFAULT 'pending' CHECK(status IN('pending','approved','dispatched','delivered','rejected','cancelled')),recipient jsonb NOT NULL,reason text NOT NULL DEFAULT '',tracking text,proof_id uuid REFERENCES private_files(id),reviewer_id uuid REFERENCES users(id),idempotency_key uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(user_id,idempotency_key));
+ALTER TABLE private_files DROP CONSTRAINT private_files_purpose_check;
+ALTER TABLE private_files ADD CONSTRAINT private_files_purpose_check CHECK(purpose IN('kyc','deposit','payout','inventory','physical'));
+
+ALTER TABLE treasury_accounts ADD COLUMN reserved numeric(78,0) NOT NULL DEFAULT 0 CHECK(reserved>=0);
+ALTER TABLE withdrawals ADD COLUMN funding_source text NOT NULL DEFAULT 'crypto' CHECK(funding_source IN('crypto','gold'));
+ALTER TABLE withdrawals ADD COLUMN gold_atoms numeric(78,0);
+ALTER TABLE withdrawals ADD COLUMN gold_fee_atoms numeric(78,0);
+ALTER TABLE withdrawals ADD COLUMN quote_id uuid UNIQUE REFERENCES gold_quotes(id);

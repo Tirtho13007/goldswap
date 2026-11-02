@@ -1,0 +1,11 @@
+if(location.pathname==='/account'&&!location.hash)location.hash='account';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './styles.css';
+import './liquid.css';
+import './public-refresh.css';
+import './operations.css';
+import './light-theme.css';
+import './wallet-experience.css';
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
