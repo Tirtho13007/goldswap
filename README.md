@@ -1,5 +1,19 @@
 # GoldSwap.app
 
+## Product source of truth
+
+Future product, design and engineering work must start with these versioned documents:
+
+- [Product Requirements](docs/PRODUCT_REQUIREMENTS.md)
+- [Technical Requirements](docs/TECHNICAL_REQUIREMENTS.md)
+- [Application Flow](docs/APP_FLOW.md)
+- [UI/UX Design Brief](docs/UI_UX_DESIGN_BRIEF.md)
+- [Backend Schema](docs/BACKEND_SCHEMA.md)
+- [Frontend Schema](docs/FRONTEND_SCHEMA.md)
+- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+
+If screenshots, old preview copy or older architecture notes conflict with this set, these documents plus executable shared policy and migrations take precedence.
+
 GoldSwap customer and staff platform built with React, TypeScript, Node 24 and PostgreSQL.
 
 ## Deployment

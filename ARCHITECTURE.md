@@ -1,5 +1,7 @@
 # GoldSwap.app — Architecture & Editing Guide
 
+> **Superseded preview-era document.** This file is retained for historical context and contains statements that no longer describe the implemented platform. For all new product, design and engineering work, start with the seven documents linked under **Product source of truth** in `README.md`, together with executable policy and migrations.
+
 শেষ আপডেট: ৩০ অক্টোবর ২০২৬। এই নথি বর্তমান implementation-এর মানচিত্র; ভবিষ্যতের backend-কে বর্তমান সুবিধা হিসেবে বর্ণনা করে না।
 
 ## 1. বর্তমান পরিধি
