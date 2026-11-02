@@ -11,6 +11,9 @@ Future product, design and engineering work must start with these versioned docu
 - [Backend Schema](docs/BACKEND_SCHEMA.md)
 - [Frontend Schema](docs/FRONTEND_SCHEMA.md)
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+- [Locked Design System](DESIGN.md)
+- [Agent Implementation Rules](AGENTS.md)
+- [Design Tooling Lock](docs/DESIGN_TOOLING.md)
 
 If screenshots, old preview copy or older architecture notes conflict with this set, these documents plus executable shared policy and migrations take precedence.
 
