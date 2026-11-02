@@ -13,5 +13,5 @@ export async function checkPassword(password: string, stored?: string) {
   return Boolean(expected && expected.length === 128 && timingSafeEqual(actual,Buffer.from(expected,'hex')));
 }
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public code?:string) { super(message); }
 }

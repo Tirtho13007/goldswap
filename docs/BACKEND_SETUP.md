@@ -1,3 +1,5 @@
+> Production update, 2 November 2026: see [DEPLOYMENT.md](DEPLOYMENT.md). Staff MFA/session reauthentication now replace the earlier blanket production block; live email delivery is implemented but requires provider configuration. Historical notes below may describe earlier milestones.
+
 # Backend setup — updated 1 November 2026
 
 ## Run locally

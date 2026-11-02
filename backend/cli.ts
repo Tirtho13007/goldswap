@@ -18,7 +18,7 @@ try {
       await tx.query("INSERT INTO users(id,email,password_hash,first_name) VALUES ($1,$2,$3,'Owner')",[id,email,hash]);
       await tx.query("INSERT INTO user_roles VALUES ($1,'super_admin')",[id]);
       await tx.query("INSERT INTO audit_events(id,actor_id,action,target_id) VALUES ($1,$2,'super_admin.bootstrapped',$2)",[randomUUID(),id]);
-    });console.log('Super Admin created. MFA integration is required before production staff access. Remove BOOTSTRAP_PASSWORD from your environment.');
+    });console.log('Super Admin created. Enroll staff authenticator protection after sign-in before using production staff controls. Remove BOOTSTRAP_PASSWORD from your environment.');
   } else if(command==='mail'){
     if(process.env.NODE_ENV==='production') throw new Error('Local mailbox is disabled in production.');
     const {rows}=await db.query('SELECT recipient,subject,body,created_at FROM email_outbox WHERE sent_at IS NULL ORDER BY created_at DESC LIMIT 20');

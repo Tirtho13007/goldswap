@@ -94,7 +94,7 @@ test('manual operations preserve access rules, idempotency and balanced money jo
       const unbalanced=await db.query('SELECT journal_id FROM money_lines GROUP BY journal_id HAVING sum(amount_atoms)<>0');assert.equal(unbalanced.rows.length,0);
       await db.query('UPDATE users SET is_demo=true WHERE id=$1',[user.data.user.id]);
       assert.equal((await request('/withdrawals',withdrawal('1'),user.cookie)).status,403);
-      process.env.NODE_ENV='production';assert.equal((await request('/staff/operations/deposits',undefined,staff.cookie)).status,503);delete process.env.NODE_ENV;
+      process.env.NODE_ENV='production';assert.equal((await request('/staff/operations/deposits',undefined,staff.cookie)).status,403);delete process.env.NODE_ENV;
     });
   }finally{delete process.env.NODE_ENV;delete process.env.UPLOAD_ENCRYPTION_KEY;await new Promise<void>(r=>server.close(()=>r()));await db.close();}
 });

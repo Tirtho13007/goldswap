@@ -1,3 +1,4 @@
+import { productionStaffGuard } from './production.js';
 import { accountSecurity,verifyMfa,staffMfaAvailable } from './account-security.js';
 import { queueIdentityEmail } from './mail.js';
 import { customerServices } from './customer-services.js';
@@ -28,7 +29,7 @@ const profileSchema = z.object({firstName:text.optional(), lastName:text.optiona
   address:z.object({line1:z.string().max(200),line2:z.string().max(200).optional(),city:z.string().max(100),
     region:z.string().max(100).optional(),postalCode:z.string().max(30).optional()}).strict().optional(),
   theme:z.enum(['light','dark','system']).optional()}).strict();
-type Principal = {id:string; roles:string[]; permissions:string[]};
+type Principal = {id:string; roles:string[]; permissions:string[];staffVerified?:boolean};
 type Authed = Request & {principal?:Principal};
 const publicUser = (row:any) => ({id:row.id,email:row.email,firstName:row.first_name,lastName:row.last_name,
   country:row.country,phone:row.phone,address:row.address,theme:row.theme,emailVerified:row.email_verified,avatarSeed:digest(row.id).slice(0,16),isDemo:Boolean(row.is_demo)});
@@ -51,11 +52,11 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
     for(const item of overrides) item.allowed?perms.add(item.permission_id):perms.delete(item.permission_id);
     return {id,roles:roleIds,permissions:[...perms].sort()};
   }
-  async function startSession(req:Request,res:Response,id:string) {
+  async function startSession(req:Request,res:Response,id:string,mfaVerified=false) {
     const token=secret();
     await db.transaction(async tx=>{
       await tx.query('DELETE FROM sessions WHERE token_hash=$1 OR expires_at<=now()',[digest(cookies(req,cookieName))]);
-      await tx.query("INSERT INTO sessions(token_hash,user_id,expires_at,user_agent) VALUES ($1,$2,now()+interval '7 days',$3)",[digest(token),id,(req.get('User-Agent')||'').slice(0,300)]);
+      await tx.query("INSERT INTO sessions(token_hash,user_id,expires_at,user_agent,mfa_verified_at,reauthenticated_at) VALUES ($1,$2,now()+interval '7 days',$3,CASE WHEN $4 THEN now() END,CASE WHEN $4 THEN now() END)",[digest(token),id,(req.get('User-Agent')||'').slice(0,300),mfaVerified]);
     });
     res.cookie(cookieName,token,{...cookieOptions,maxAge:7*86400000});
   }
@@ -90,10 +91,10 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
   });
   const requireAuth=async(req:Authed,_res:Response,next:NextFunction)=>{
     try {
-      const {rows}=await db.query(`SELECT u.id FROM sessions s JOIN users u ON u.id=s.user_id
+      const {rows}=await db.query(`SELECT u.id,s.mfa_verified_at,EXISTS(SELECT 1 FROM mfa_credentials m WHERE m.user_id=u.id AND m.enabled=true) AS mfa_enabled FROM sessions s JOIN users u ON u.id=s.user_id
         WHERE s.token_hash=$1 AND s.expires_at>now() AND u.status='active' AND (u.is_demo=false OR $2=true)`,[digest(cookies(req,cookieName)),process.env.NODE_ENV!=='production']);
       if(!rows.length) throw new ApiError(401,'Sign in to continue.');
-      req.principal=await access(rows[0].id);await db.query("UPDATE sessions SET last_seen_at=now() WHERE token_hash=$1 AND last_seen_at<now()-interval '5 minutes'",[digest(cookies(req,cookieName))]);next();
+      req.principal=await access(rows[0].id);req.principal.staffVerified=Boolean(rows[0].mfa_verified_at&&rows[0].mfa_enabled);await db.query("UPDATE sessions SET last_seen_at=now() WHERE token_hash=$1 AND last_seen_at<now()-interval '5 minutes'",[digest(cookies(req,cookieName))]);next();
     }catch(error){next(error);}
   };
   const permission=(name:string)=>(req:Authed,_res:Response,next:NextFunction)=>{
@@ -118,7 +119,7 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
     const input=z.object({email:emailSchema,password:z.string().min(1).max(128),code:z.string().max(100).default('')}).parse(req.body);
     const {rows}=await db.query('SELECT * FROM users WHERE email=$1',[input.email]);const user=rows[0];
     if(!await checkPassword(input.password,user?.password_hash)||user?.status!=='active'||(user?.is_demo&&process.env.NODE_ENV==='production')) throw new ApiError(401,'Email or password is incorrect.');
-    await db.transaction(async tx=>{await tx.query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[user.id]);await verifyMfa(tx,user.id,input.code);await audit(tx,user.id,'security.signed_in',user.id);});await startSession(req,res,user.id);res.json({user:publicUser(user)});
+    const verified=await db.transaction(async tx=>{await tx.query('SELECT id FROM users WHERE id=$1 FOR UPDATE',[user.id]);const verified=await verifyMfa(tx,user.id,input.code);await audit(tx,user.id,'security.signed_in',user.id);return verified;});await startSession(req,res,user.id,verified);res.json({user:publicUser(user)});
   });
   app.get('/auth/session',async(req,res)=>{
     const {rows}=await db.query(`SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE s.token_hash=$1 AND s.expires_at>now() AND u.status='active' AND (u.is_demo=false OR $2=true)`,[digest(cookies(req,cookieName)),process.env.NODE_ENV!=='production']);
@@ -188,6 +189,7 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
     } catch {res.redirect('/#account?error=google');}
   });
   app.use(requireAuth);
+  app.use(['/staff','/admin'],productionStaffGuard(db,req=>digest(cookies(req,cookieName))));
   app.use(async(req:Authed,_res,next)=>{if(req.method!=='GET'&&!req.principal!.permissions.length&&/^\/(deposits|withdrawals|gold|kyc|swaps|crypto\/estimate)(\/|$)/.test(req.path)&&(await siteSettings(db)).maintenanceMode)return next(new ApiError(503,'The platform is under maintenance. Please try again later.'));next();});
   app.use('/security',(req,res,next)=>req.method==='GET'?next():limit('security',40)(req,res,next));
   app.use(accountSecurity(db,req=>digest(cookies(req,cookieName))));
@@ -230,9 +232,6 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
     if(!rows.length)throw new ApiError(404,'Demo account not found.');
     res.json({...rows[0].snapshot,serverTime:new Date().toISOString()});
   });
-  // Staff MFA and reauthentication are the next milestone. Keep privileged APIs
-  // unavailable in production until that workflow exists; local integration tests remain usable.
-  app.use(['/admin','/staff'],(_req,_res,next)=>next(process.env.NODE_ENV==='production'?new ApiError(503,'Staff access is not activated in this release.'):undefined));
   app.use(staffControl(db,permission,superOnly,origin));
   app.get('/admin/permissions',superOnly,permission('roles.manage'),(_req,res)=>res.json({permissions:PERMISSIONS}));
   app.get('/admin/roles',superOnly,permission('roles.manage'),async(_req,res)=>{
@@ -274,7 +273,7 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
   app.use((err:any,_req:Request,res:Response,_next:NextFunction)=>{
     if(err.code==='23505')return res.status(409).json({error:'This record or blockchain transfer has already been submitted.'});
     if(err instanceof z.ZodError) return res.status(400).json({error:'Check the submitted fields.',fields:err.issues.map(i=>({path:i.path.join('.'),message:i.message}))});
-    if(err instanceof ApiError) return res.status(err.status).json({error:err.message});
+    if(err instanceof ApiError) return res.status(err.status).json({error:err.message,...(err.code?{code:err.code}:{})});
     if(err.type==='entity.parse.failed'||err.type==='entity.too.large') return res.status(400).json({error:'Invalid request body.'});
     console.error('API failure',err.code||err.name);res.status(500).json({error:'Unable to complete the request.'});
   });

@@ -1,3 +1,5 @@
+> Production update, 2 November 2026: see [DEPLOYMENT.md](DEPLOYMENT.md). Staff MFA/session reauthentication now replace the earlier blanket production block; live email delivery is implemented but requires provider configuration. Historical notes below may describe earlier milestones.
+
 # Crypto operations — 1 November 2026
 
 **Current confirmed rules and gold implementation: [PLATFORM_RULES.md](PLATFORM_RULES.md).** This page describes the original manual crypto flow; the confirmed policy supersedes its earlier activation notes.

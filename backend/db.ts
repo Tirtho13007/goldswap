@@ -9,10 +9,12 @@ export interface Sql {
 }
 export async function connectDatabase(): Promise<Sql> {
   if (process.env.DATABASE_URL) {
-    const pool = new Pool({connectionString: process.env.DATABASE_URL});
+    const pool = new Pool({connectionString: process.env.DATABASE_URL, max: Number(process.env.DB_POOL_MAX || 5), connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000});
+    pool.on('error',()=>console.error('Database pool connection failed'));
     const wrap = (client: any): Sql => ({
       query: (sql, params) => client.query(sql, params),
       transaction: async work => {
+        if(client !== pool) throw new Error('Nested database transactions are not supported; use the current transaction client.');
         const conn = await pool.connect();
         try { await conn.query('BEGIN'); const result = await work(wrap(conn)); await conn.query('COMMIT'); return result; }
         catch (error) { await conn.query('ROLLBACK'); throw error; }
@@ -43,7 +45,7 @@ export async function migrate(db: Sql) {
   await db.transaction(async tx => {
     await tx.query('SELECT pg_advisory_xact_lock(784102)');
     await tx.query('CREATE TABLE IF NOT EXISTS schema_migrations (id text PRIMARY KEY, applied_at timestamptz DEFAULT now())');
-    for(const migration of ['001_identity','002_demo','003_operations','004_platform_gold','005_staff_control','006_wallet_swap','007_customer_services']){
+    for(const migration of ['001_identity','002_demo','003_operations','004_platform_gold','005_staff_control','006_wallet_swap','007_customer_services','008_production']){
     const {rows} = await tx.query('SELECT id FROM schema_migrations WHERE id=$1', [migration]);
     if (!rows.length) {
       const script = await readFile(new URL(`../database/migrations/${migration}.sql`, import.meta.url), 'utf8');

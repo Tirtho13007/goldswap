@@ -18,7 +18,12 @@
     "dev:mail": "node --env-file-if-exists=.env --import tsx backend/cli.ts mail",
     "typecheck:backend": "tsc -p backend/tsconfig.json",
     "test": "node --import tsx --test tests/*.test.ts",
-    "demo:seed": "node --env-file-if-exists=.env --import tsx backend/cli.ts seed-demo"
+    "demo:seed": "node --env-file-if-exists=.env --import tsx backend/cli.ts seed-demo",
+    "worker": "node --env-file-if-exists=.env --import tsx worker.mjs",
+    "check:deployment": "node --env-file-if-exists=.env --import tsx scripts/check-deployment.ts",
+    "test:postgres": "node --import tsx scripts/test-postgres.ts",
+    "db:backup": "node --env-file-if-exists=.env scripts/database-backup.mjs backup",
+    "db:restore-check": "node --env-file-if-exists=.env scripts/database-backup.mjs restore-check"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",

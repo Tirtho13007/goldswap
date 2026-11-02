@@ -1,7 +1,57 @@
 {
   "name": "GoldSwap",
-  "description": "GoldSwap React landing page and interactive design preview",
-  "keywords": ["react", "typescript", "goldswap", "threejs"],
-  "env": { "NODE_ENV": { "value": "production" } },
-  "buildpacks": [{ "url": "heroku/nodejs" }]
+  "description": "GoldSwap customer and staff platform",
+  "keywords": [
+    "react",
+    "typescript",
+    "goldswap"
+  ],
+  "env": {
+    "NODE_ENV": {
+      "value": "production"
+    },
+    "APP_ORIGIN": {
+      "value": "https://goldswap.app"
+    },
+    "JOB_MODE": {
+      "value": "external"
+    },
+    "TRUST_PROXY_HOPS": {
+      "value": "1"
+    },
+    "DATABASE_URL": {
+      "description": "Managed PostgreSQL connection URL with provider-required verified TLS"
+    },
+    "UPLOAD_ENCRYPTION_KEY": {
+      "description": "Generate and retain 32 random bytes as 64 hex characters; never rotate without migrating encrypted data"
+    },
+    "MAIL_DELIVERY_ENABLED": {
+      "value": "true"
+    },
+    "MAIL_FROM": {
+      "value": "GoldSwap <accounts@goldswap.app>"
+    },
+    "RESEND_API_KEY": {
+      "description": "Resend API key for a verified goldswap.app sender domain"
+    },
+    "CLAMAV_HOST": {
+      "description": "Private clamd service hostname"
+    },
+    "SEO_INDEXING_ENABLED": {
+      "value": "false"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1
+    },
+    "worker": {
+      "quantity": 1
+    }
+  }
 }

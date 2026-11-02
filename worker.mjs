@@ -1,0 +1,10 @@
+import { connectDatabase,migrate } from './backend/db.ts';
+import { validateDeployment } from './backend/production.ts';
+import { startJobs } from './backend/jobs.ts';
+validateDeployment();
+const db=await connectDatabase();
+if(process.env.NODE_ENV!=='production')await migrate(db);
+const stop=startJobs(db,process.env.APP_ORIGIN||'http://localhost:4173');
+const keepAlive=setInterval(()=>{},60000);
+for(const signal of ['SIGTERM','SIGINT'])process.on(signal,async()=>{clearInterval(keepAlive);const deadline=setTimeout(()=>process.exit(1),30000);deadline.unref();await stop();clearTimeout(deadline);await db.close();process.exit(0);});
+console.log('GoldSwap account worker started');

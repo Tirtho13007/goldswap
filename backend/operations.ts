@@ -1,3 +1,4 @@
+import { scanUpload } from './upload-scan.js';
 import { transactionDetails,ensureDocument } from './transaction-details.js';
 import QRCode from 'qrcode';
 import { PLATFORM_POLICY } from '../shared/policy.js';
@@ -53,6 +54,7 @@ export function operations(db:Sql,permission:(name:string)=>RequestHandler,servi
     const bytes=Buffer.from(input.data,'base64');if(!bytes.length||bytes.length>5*1024*1024)throw new ApiError(400,'Maximum file size is 5 MB.');
     const mime=bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))?'image/png':bytes[0]===255&&bytes[1]===216&&bytes[2]===255?'image/jpeg':bytes.subarray(0,5).toString()==='%PDF-'?'application/pdf':null;
     if(!mime)throw new ApiError(400,'Upload a PNG, JPEG or PDF file.');
+    await scanUpload(bytes);
     const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',await encryptionKey(),iv),content=Buffer.concat([cipher.update(bytes),cipher.final()]),encrypted=Buffer.concat([iv,cipher.getAuthTag(),content]);
     const id=randomUUID(),name=input.name.replace(/[^a-zA-Z0-9._ -]/g,'_')||'document';
     await db.query('INSERT INTO private_files(id,user_id,purpose,name,mime,encrypted) VALUES ($1,$2,$3,$4,$5,$6)',[id,uid(req),input.purpose,name,mime,encrypted]);res.status(201).json({file:{id,name,mime}});
@@ -60,7 +62,7 @@ export function operations(db:Sql,permission:(name:string)=>RequestHandler,servi
   router.get('/files/:id',async(req,res)=>{
     const id=idSchema.parse(req.params.id),file=(await db.query('SELECT * FROM private_files WHERE id=$1',[id])).rows[0];if(!file)throw new ApiError(404,'Document not found.');if(file.purged_at)throw new ApiError(410,'Document content was removed under the retention workflow.');
     let allowed=file.user_id===uid(req)||(await db.query('SELECT 1 FROM support_messages m JOIN support_tickets t ON t.id=m.ticket_id WHERE t.user_id=$1 AND m.attachment_ids @> $2::jsonb',[uid(req),JSON.stringify([id])])).rows.length>0||(await db.query('SELECT 1 FROM physical_gold_requests WHERE proof_id=$1 AND user_id=$2',[id,uid(req)])).rows.length>0||(await db.query('SELECT 1 FROM withdrawals WHERE proof_id=$1 AND user_id=$2',[id,uid(req)])).rows.length>0;const perms=(req as Auth).principal!.permissions;
-    if(!allowed&&process.env.NODE_ENV!=='production'){
+    if(!allowed&&(process.env.NODE_ENV!=='production'||(req as any).principal.staffVerified)){
       if(perms.includes('support.view')&&(await db.query('SELECT 1 FROM support_messages WHERE attachment_ids @> $1::jsonb',[JSON.stringify([id])])).rows.length)allowed=true;
       if(perms.includes('kyc.view')&&(await db.query("SELECT 1 FROM kyc_history WHERE snapshot->'documentIds' @> $1::jsonb",[JSON.stringify([id])])).rows.length)allowed=true;
       if(perms.includes('kyc.view')&&(await db.query('SELECT 1 FROM kyc_cases WHERE document_ids @> $1::jsonb',[JSON.stringify([id])])).rows.length)allowed=true;
@@ -98,7 +100,6 @@ export function operations(db:Sql,permission:(name:string)=>RequestHandler,servi
   async function release(tx:Sql,row:any,actor:string,status:string,reason:string){const amount=BigInt(row.amount_atoms);if(row.funding_source==='gold')await (await import('./gold.js')).releaseGoldWithdrawal(tx,row);else{await tx.query('UPDATE money_accounts SET available=available+$1,reserved=reserved-$1 WHERE user_id=$2 AND asset=$3',[amount.toString(),row.user_id,row.asset]);await journal(tx,'release:'+row.id,row.asset,'withdrawal.release',[[row.user_id+':reserved',-amount],[row.user_id+':available',amount]]);}await tx.query('UPDATE withdrawals SET status=$1,reason=$2,reviewer_id=$3 WHERE id=$4',[status,reason,actor,row.id]);await audit(tx,actor,'withdrawal.'+status,row.id,{reason});}
   router.post('/withdrawals/:id/cancel',async(req,res)=>{const id=idSchema.parse(req.params.id);await db.transaction(async tx=>{await financialUser(tx,uid(req));const row=(await tx.query('SELECT * FROM withdrawals WHERE id=$1 AND user_id=$2 FOR UPDATE',[id,uid(req)])).rows[0];if(!row)throw new ApiError(404,'Request not found.');if(row.status==='cancelled')return;if(row.status!=='pending')throw new ApiError(409,'This request can no longer be cancelled.');await release(tx,row,uid(req),'cancelled','Cancelled by account holder');});res.json({status:'cancelled'});});
   
-  router.use('/staff',(_req,_res,next)=>next(process.env.NODE_ENV==='production'?new ApiError(503,'Staff MFA must be activated before production operations.'):undefined));
   router.get('/staff/crypto/settings',permission('configuration.manage'),async(req:Auth,res)=>{
     if(!req.principal!.roles.includes('super_admin'))throw new ApiError(403,'Super Admin access required.');
     const settings=(await db.query('SELECT * FROM crypto_settings')).rows;res.json({methods:CRYPTO_ROUTES.map(r=>{const s=settings.find(s=>s.route_id===r.id);return {...r,address:s?.address||'',memo:s?.memo||'',depositEnabled:Boolean(s?.enabled),withdrawalEnabled:Boolean(s?.withdrawal_enabled),confirmations:s?.confirmations||6};})});

@@ -163,7 +163,6 @@ export function goldOperations(db:Sql,permission:(name:string)=>RequestHandler,s
   router.post('/gold/physical/:id/cancel',async(req,res)=>{
     const id=idSchema.parse(req.params.id);await db.transaction(async tx=>{await financialUser(tx,uid(req));await stock(tx);await account(tx,uid(req));const row=(await tx.query('SELECT * FROM physical_gold_requests WHERE id=$1 AND user_id=$2 FOR UPDATE',[id,uid(req)])).rows[0];if(!row)throw new ApiError(404,'Request not found.');if(row.status==='cancelled')return;if(row.status!=='pending')throw new ApiError(409,'Only pending physical requests can be cancelled.');await releasePhysical(tx,row,uid(req),'cancelled','Cancelled by account holder');});res.json({status:'cancelled'});
   });
-  router.use('/staff',(_req,_res,next)=>next(process.env.NODE_ENV==='production'?new ApiError(503,'Staff MFA must be activated before production operations.'):undefined));
   router.get('/staff/gold',permission('configuration.manage'),async(_req,res)=>{
     res.json({settings:(await db.query('SELECT * FROM platform_gold_settings WHERE id=1')).rows[0],stock:(await db.query('SELECT * FROM gold_stock WHERE id=1')).rows.map(s=>({available:gram(s.available),reservedProfit:gram(s.reserved)}))[0],treasury:(await db.query('SELECT * FROM treasury_accounts')).rows.map(t=>({asset:t.asset,available:decimal(t.available,precision(t.asset)),reserved:decimal(t.reserved,precision(t.asset))}))});
   });
