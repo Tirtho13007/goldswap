@@ -34,7 +34,7 @@ app.use((req,res,next)=>{
 app.get('/health',(_req,res)=>res.json({status:'ok'}));
 app.get('/ready',async(_req,res)=>{try{
  await db.query('SELECT 1');
- const migrated=(await db.query("SELECT 1 FROM schema_migrations WHERE id='008_production'")).rows.length;
+ const migrated=(await db.query("SELECT 1 FROM schema_migrations WHERE id='009_inventory_adjustments'")).rows.length;
  const healthy=(await db.query("SELECT 1 FROM worker_health WHERE name='account-services' AND last_success_at>now()-interval '5 minutes'")).rows.length;
  if(!migrated||!healthy)return res.status(503).json({status:'not_ready'});
  res.json({status:'ready'});

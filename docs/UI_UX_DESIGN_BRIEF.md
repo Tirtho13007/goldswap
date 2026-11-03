@@ -134,6 +134,8 @@ Never communicate status by colour alone; include a label and, when useful, an i
 - No autoplay UI sound; the sound on/off menu item remains removed.
 - Respect `prefers-reduced-motion` and provide equivalent non-motion feedback.
 
+Owner-approved market motion: the live price ticker scrolls continuously with pause/play, hover/focus pause and reduced-motion/manual-scroll fallback. Price data still refreshes while presentation is paused. Public card/field refinements are scoped to public-design.css; preserve staff styling.
+
 ## 9. Accessibility acceptance
 
 - Target WCAG 2.2 AA.

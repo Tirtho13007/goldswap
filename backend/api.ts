@@ -229,7 +229,7 @@ export function createApi(db:Sql, origin:string,services:Services=marketServices
     if(process.env.NODE_ENV==='production')throw new ApiError(404,'Not available.');
     const id=z.uuid().parse(req.params.id);
     const {rows}=await db.query('SELECT d.snapshot FROM demo_snapshots d JOIN users u ON u.id=d.user_id WHERE u.id=$1 AND u.is_demo=true',[id]);
-    if(!rows.length)throw new ApiError(404,'Demo account not found.');
+    if(!rows.length)throw new ApiError(404,'Illustrative account not found.');
     res.json({...rows[0].snapshot,serverTime:new Date().toISOString()});
   });
   app.use(staffControl(db,permission,superOnly,origin));

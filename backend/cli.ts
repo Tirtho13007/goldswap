@@ -17,7 +17,7 @@ try {
       const id=randomUUID();
       await tx.query("INSERT INTO users(id,email,password_hash,first_name) VALUES ($1,$2,$3,'Owner')",[id,email,hash]);
       await tx.query("INSERT INTO user_roles VALUES ($1,'super_admin')",[id]);
-      await tx.query("INSERT INTO audit_events(id,actor_id,action,target_id) VALUES ($1,$2,'super_admin.bootstrapped',$2)",[randomUUID(),id]);
+      await tx.query("INSERT INTO audit_events(id,actor_id,action,target_id) VALUES ($1,$2,'super_admin.bootstrapped',$3)",[randomUUID(),id,id]);
     });console.log('Super Admin created. Enroll staff authenticator protection after sign-in before using production staff controls. Remove BOOTSTRAP_PASSWORD from your environment.');
   } else if(command==='mail'){
     if(process.env.NODE_ENV==='production') throw new Error('Local mailbox is disabled in production.');

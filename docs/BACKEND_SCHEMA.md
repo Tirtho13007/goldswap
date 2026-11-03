@@ -1,7 +1,11 @@
 # GoldSwap Backend Schema
 
+## Inventory adjustments (migration 009)
+
+`inventory_adjustments`: UUID id/idempotency key, actor_id, add/remove direction, positive integer gold atoms, globally unique adjustment reference, reason, balance_after and created_at. Stock is locked before checking/replaying/writing an adjustment. Each change has balanced journal lines and an audit event. Only unallocated company gold is removable. GET/POST `/staff/gold/adjustments` require Super Admin plus adjustments.review. Confidential evidence is not required as an upload for an internal attestation.
+
 **Status:** Current database and service map  
-**Schema migrations:** `001_identity` through `008_production`  
+**Schema migrations:** `001_identity` through `009_inventory_adjustments`
 **Last updated:** 2 November 2026
 
 This is a conceptual reference. Executable truth remains in `database/migrations/*.sql`, constraints and backend services. Financial columns ending in `_atoms` are integers; never interpret them as display decimals without asset precision.

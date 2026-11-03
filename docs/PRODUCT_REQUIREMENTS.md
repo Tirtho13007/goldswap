@@ -24,6 +24,19 @@ GoldSwap is the counterparty. The application does not claim automatic exchange 
 
 ## 2. User types
 
+### Supplied company identity
+
+- Legal name: Standard Pure Gold Trading LLC.
+- Operating location: Dubai, United Arab Emirates (AE).
+- Registered office: 702, Makateb Building, Port Saeed, Dubai, P.O. Box 27430, UAE.
+- Trade licence reference: 802467.
+- LEI: 984500B80CECC46U0482.
+- Source of GoldSwap association: owner-supplied information, 3 November 2026.
+- GLEIF API check on 3 November 2026: entity ACTIVE; LEI registration LAPSED. Do not describe the LEI as currently renewed. This observation does not determine trade licence validity.
+- GoldSwap custody/backing, service permissions and final Terms/Privacy documents remain pending. These identifiers must not be presented as evidence for those claims.
+
+Canonical published identity: `shared/company.ts`.
+
 | Actor | Primary purpose |
 |---|---|
 | Visitor | Understand the service, market, fees, risks and company information; register or sign in. |
@@ -115,6 +128,7 @@ The canonical executable values are in `shared/policy.ts` and `shared/crypto.ts`
 - **PR-ADM-04:** Staff access is enforced server-side. Hiding a button is not authorization.
 - **PR-ADM-05:** Super Admin can restrict, archive and restore users; financial/audit records remain retained.
 - **PR-ADM-06:** Reviews, exports, settings, inventory adjustments, role changes and evidence access are audited.
+- **PR-ADM-07:** Only Super Admin with adjustments.review can add/remove unallocated company gold stock using a unique reference, reason and idempotency key. Removal cannot debit customer balances or reserved profit. Stock is an internal company attestation; confidential supporting evidence may be retained privately. No starting reserve is populated from a chat statement.
 
 ## 5. Dashboard information hierarchy
 
@@ -139,7 +153,7 @@ Staff overview priority:
 
 - No fiat/card/mobile-money funding or payout in the approved release.
 - No customer two-step authenticator feature.
-- No fake balances, fake percentages, fake reviews or invented custody evidence in production.
+- No fabricated real balances, returns, endorsements or custody evidence. Owner-requested illustrative reviews/activity may appear with explicit fictional/demo disclosure and red provenance dots; they must not be presented as live customer records.
 - No promise of instant processing, guaranteed market growth, independent insurance or licensing without verified documents.
 - No private keys or seed phrases are stored or requested.
 - No automatic blockchain transfer is implied by an internal status change.

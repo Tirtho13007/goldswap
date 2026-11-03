@@ -2,8 +2,13 @@
 
 **Status:** Locked visual source of truth  
 **Version:** 1.0  
+**Quality baseline:** readable metadata uses at least 12px; shared controls use ActionButton with explicit pending state and Spinner. Public text is solid colour; illustrative social proof carries explicit illustrative provenance. Mobile targets are 44px minimum. Use “Illustrative” in all example-content labels; do not use “Demo” in UI copy. Review provenance stays on the red-dot tooltip and section introduction; omit the redundant bottom disclosure.
 **Last updated:** 2 November 2026  
 **Taste calibration:** BOLD 55/100 · MOTION 35/100 · DENSITY 58/100
+
+3 November interaction refinement: sentence case for headings, action labels and supporting labels; retain proper brand names and uppercase asset/security abbreviations (BTC, USDT, KYC, USD). Use the existing colour tokens for hover/selected/focus states. Live-price breathing appears only on a fresh quote; request detail transitions run for 220ms and obey reduced motion. Review queues use a visible selection, loading/error/empty states, oldest-first ordering, explicit filters and adjacent proof/decision details. On narrow screens the queue and review stack. Shared refinements live in interaction-polish.css.
+
+3 November public refinement: public surfaces share 22px cards, 24/32px padding, 14px controls and 15–16px body copy. Gold owns tier rates and primary actions; asset logos retain authentic colours. The live-price ticker intentionally scrolls continuously at the owner's request, with an explicit pause/play control, hover/focus pause and reduced-motion fallback. Public-specific refinements live in public-design.css and must not restyle staff controls.
 
 Read this file before creating or modifying any UI. Approved product behaviour remains in `docs/PRODUCT_REQUIREMENTS.md`; detailed interaction guidance remains in `docs/UI_UX_DESIGN_BRIEF.md`. This file owns visual tokens and non-negotiable component rules.
 
@@ -171,6 +176,10 @@ Do not create arbitrary spacing/radius values when a listed token fits. Cards ar
 - cancelled/draft/neutral → muted slate.
 
 Every status includes text, never colour alone.
+
+Company self-attestation uses a green BadgeCheck SVG and the exact label “Verified by GoldSwap INC”, with the visible qualifier “Internal company verification. Not an independent audit.” Keep it scoped to the custody statement; it is not a registry, regulator or independent-auditor badge.
+
+Owner-requested public illustrative reviews/activity remain visible with explicit illustrative disclosure and red review provenance dots. They must never be described as live customer transactions or independently verified endorsements. The public workspace showcase is a single flat, responsive illustrative account card, without perspective, duplicate outline or overlapping orbit decoration.
 
 ### Forms and dialogs
 

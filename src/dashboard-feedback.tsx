@@ -1,3 +1,4 @@
+import { ActionButton } from './ActionButton';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent, PointerEvent } from 'react';
 import { Volume2, Vibrate, Sparkles } from 'lucide-react';
@@ -45,5 +46,5 @@ export function InteractionSettings({feedback}:{feedback:ReturnType<typeof useDa
     {key:'sound',title:'Interface sounds',description:'Soft tones when you tap and switch.',icon:Volume2},
     {key:'haptics',title:'Touch feedback',description:'A light tap on supported devices.',icon:Vibrate},
     {key:'motion',title:'Fluid animations',description:'Smooth transitions and ambient movement.',icon:Sparkles},
-  ] as const).map(({key,title,description,icon:Icon})=><div className="interaction-setting" key={key}><Icon size={18}/><div><strong>{title}</strong><small>{description}</small></div><button role="switch" aria-label={title} aria-checked={feedback.preferences[key]} onClick={()=>feedback.update(key,!feedback.preferences[key])}><span/></button></div>)}<small className="interaction-footnote">Saved on this device. System reduced-motion preferences are always respected.</small></section>;
+  ] as const).map(({key,title,description,icon:Icon})=><div className="interaction-setting" key={key}><Icon size={18}/><div><strong>{title}</strong><small>{description}</small></div><ActionButton role="switch" aria-label={title} aria-checked={feedback.preferences[key]} onClick={()=>feedback.update(key,!feedback.preferences[key])}><span/></ActionButton></div>)}<small className="interaction-footnote">Saved on this device. System reduced-motion preferences are always respected.</small></section>;
 }

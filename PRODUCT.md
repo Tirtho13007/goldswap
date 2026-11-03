@@ -6,6 +6,22 @@ This file is the short routing context expected by Impeccable and similar design
 
 GoldSwap is a crypto-funded gold account platform. Customers register, complete manual KYC, deposit supported crypto with proof, buy/sell platform gold, swap internal balances, place eligible gold into five-day holds, request crypto withdrawals and order physical gold.
 
+## Positioning
+
+A precise gold and crypto account for customers who need visible fees, balances and manual request tracking. GoldSwap is the counterparty.
+
+## Operating Context
+
+Customers use mobile and desktop; staff review evidence and manage permission-scoped queues. Production uses PostgreSQL, separate workers, configured email and screened private uploads.
+
+## Evidence on Hand
+
+Executable policy, API integration tests and local browser QA establish implementation behavior. Company registration, applicable permissions, custody evidence and final legal terms still require owner-supplied documentation.
+
+## Product Principles
+
+Use exact financial arithmetic, honest service status, visible fees and accessible controls. Preserve gold branding, consistent themes and short purposeful motion. Owner-requested illustrative reviews and activity are visible with explicit fictional/demo provenance; they never claim real customer transactions.
+
 ## Primary users
 
 - Customers need a calm, understandable wallet with explicit balances, fees, status and next actions.

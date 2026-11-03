@@ -48,7 +48,7 @@ export async function migrate(db: Sql) {
   await db.transaction(async tx => {
     await tx.query('SELECT pg_advisory_xact_lock(784102)');
     await tx.query('CREATE TABLE IF NOT EXISTS schema_migrations (id text PRIMARY KEY, applied_at timestamptz DEFAULT now())');
-    for(const migration of ['001_identity','002_demo','003_operations','004_platform_gold','005_staff_control','006_wallet_swap','007_customer_services','008_production']){
+    for(const migration of ['001_identity','002_demo','003_operations','004_platform_gold','005_staff_control','006_wallet_swap','007_customer_services','008_production','009_inventory_adjustments']){
     const {rows} = await tx.query('SELECT id FROM schema_migrations WHERE id=$1', [migration]);
     if (!rows.length) {
       const script = await readFile(new URL(`../database/migrations/${migration}.sql`, import.meta.url), 'utf8');

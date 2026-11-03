@@ -52,6 +52,8 @@ Staff workspace (permission-filtered)
 
 Staff navigation must not include customer financial actions.
 
+Staff destinations persist in the hash as `#account/deposits`, `#account/kyc`, and equivalent navigation IDs. Reload and browser history restore the permitted destination. Review queues show oldest-first results, explicit status/email filters, loading/error/empty states and a selected row. Selecting a request opens and focuses its adjacent proof/decision panel; narrow screens stack the panels. Selection never submits a decision.
+
 ## 2. Registration and verification
 
 ```text

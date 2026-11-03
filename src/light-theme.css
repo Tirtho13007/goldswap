@@ -139,7 +139,7 @@
   .site[data-theme=light] :is(.hero-description, .section-heading p, .step p, .faq-item p,
     .public-detail-panel p, .public-journey p, .public-note p) { font-size: 15px; line-height: 1.85; }
   .site[data-theme=light] .tier-card li { font-size: 13px; line-height: 1.7; }
-  .site[data-theme=light] .terms-note { font-size: 12px; line-height: 1.85; }
+  .site[data-theme=light] .terms-note { font-size:13px; line-height: 1.85; }
   .site[data-theme=light] .faq-item.open { padding-inline: 14px; }
 }
 

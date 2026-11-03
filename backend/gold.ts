@@ -171,10 +171,37 @@ export function goldOperations(db:Sql,permission:(name:string)=>RequestHandler,s
     const input=z.object({tradesEnabled:z.boolean(),ratesConfirmed:z.literal(true),physicalFeeBasis:z.literal('additional_gold')}).strict().parse(req.body);
     await db.transaction(async tx=>{await tx.query("UPDATE platform_gold_settings SET trades_enabled=$1,rates_confirmed=true,physical_fee_basis='additional_gold',updated_at=now() WHERE id=1",[input.tradesEnabled]);await audit(tx,uid(req),'gold.terms_configured','1',input);});res.json({message:'Gold terms saved.'});
   });
+  router.get('/staff/gold/adjustments',permission('adjustments.review'),async(req:Auth,res)=>{
+    if(!req.principal!.roles.includes('super_admin'))throw new ApiError(403,'Super Admin access required.');
+    const rows=(await db.query('SELECT a.*,u.email FROM inventory_adjustments a JOIN users u ON u.id=a.actor_id ORDER BY a.created_at DESC,a.id LIMIT 100')).rows;
+    res.json({adjustments:rows.map(r=>({...r,grams:gram(r.gold_atoms),balanceAfter:gram(r.balance_after)}))});
+  });
+  router.post('/staff/gold/adjustments',permission('adjustments.review'),async(req:Auth,res)=>{
+    if(!req.principal!.roles.includes('super_admin'))throw new ApiError(403,'Super Admin access required.');
+    const input=z.object({idempotencyKey:idSchema,direction:z.enum(['add','remove']),grams:z.string(),reference:z.string().trim().min(8).max(200),reason:z.string().trim().min(8).max(1000)}).strict().parse(req.body);
+    const quantity=atoms(input.grams,GOLD_PRECISION);
+    const result=await db.transaction(async tx=>{
+      const current=await stock(tx);
+      const previous=(await tx.query('SELECT * FROM inventory_adjustments WHERE id=$1',[input.idempotencyKey])).rows[0];
+      if(previous){
+        if(previous.actor_id!==uid(req)||previous.direction!==input.direction||BigInt(previous.gold_atoms)!==quantity||previous.reference!==input.reference||previous.reason!==input.reason)throw new ApiError(409,'Idempotency key already used for another adjustment.');
+        return {id:previous.id,available:gram(previous.balance_after)};
+      }
+      if((await tx.query('SELECT 1 FROM inventory_adjustments WHERE reference=$1',[input.reference])).rows.length||(await tx.query('SELECT 1 FROM inventory_receipts WHERE reference=$1',[input.reference])).rows.length)throw new ApiError(409,'Inventory reference already recorded.');
+      if(input.direction==='remove'&&quantity>BigInt(current.available))throw new ApiError(409,'Only unallocated company stock can be removed. Customer balances and reserved profit cannot be reduced.');
+      const change=input.direction==='add'?quantity:-quantity,balance=BigInt(current.available)+change;
+      await tx.query('UPDATE gold_stock SET available=$1 WHERE id=1',[balance.toString()]);
+      await tx.query('INSERT INTO inventory_adjustments(id,actor_id,direction,gold_atoms,reference,reason,balance_after) VALUES ($1,$2,$3,$4,$5,$6,$7)',[input.idempotencyKey,uid(req),input.direction,quantity.toString(),input.reference,input.reason,balance.toString()]);
+      await journal(tx,'inventory-adjustment:'+input.idempotencyKey,'XAU','inventory.'+input.direction,[['external:attested:gold',-change],['platform:gold',change]]);
+      await audit(tx,uid(req),'gold.inventory_'+input.direction,input.idempotencyKey,{...input,balanceAfter:gram(balance),evidence:'Internal company stock attestation'});
+      return {id:input.idempotencyKey,available:gram(balance)};
+    });
+    res.status(201).json({...result,message:'Company stock adjusted. Customer balances and reserved profit are unchanged.'});
+  });
   router.post('/staff/gold/inventory',permission('adjustments.review'),async(req:Auth,res)=>{
     if(!req.principal!.roles.includes('super_admin'))throw new ApiError(403,'Super Admin access required.');
     const input=z.object({grams:z.string(),reference:z.string().trim().min(8).max(200),proofId:idSchema}).strict().parse(req.body),quantity=atoms(input.grams,GOLD_PRECISION);
-    await db.transaction(async tx=>{await ownFiles(tx,uid(req),[input.proofId],'inventory');await stock(tx);const id=randomUUID();await tx.query('INSERT INTO inventory_receipts(id,reference,gold_atoms,proof_id,actor_id) VALUES ($1,$2,$3,$4,$5)',[id,input.reference,quantity.toString(),input.proofId,uid(req)]);await tx.query('UPDATE gold_stock SET available=available+$1 WHERE id=1',[quantity.toString()]);await journal(tx,'inventory:'+input.reference,'XAU','inventory.recorded',[['external:documented:gold',-quantity],['platform:gold',quantity]]);await audit(tx,uid(req),'gold.inventory_recorded',id,{grams:input.grams,reference:input.reference,proofId:input.proofId});});res.status(201).json({message:'Documented platform inventory recorded. This is an operator attestation.'});
+    await db.transaction(async tx=>{await ownFiles(tx,uid(req),[input.proofId],'inventory');await stock(tx);if((await tx.query('SELECT 1 FROM inventory_adjustments WHERE reference=$1',[input.reference])).rows.length)throw new ApiError(409,'Inventory reference already recorded.');const id=randomUUID();await tx.query('INSERT INTO inventory_receipts(id,reference,gold_atoms,proof_id,actor_id) VALUES ($1,$2,$3,$4,$5)',[id,input.reference,quantity.toString(),input.proofId,uid(req)]);await tx.query('UPDATE gold_stock SET available=available+$1 WHERE id=1',[quantity.toString()]);await journal(tx,'inventory:'+input.reference,'XAU','inventory.recorded',[['external:documented:gold',-quantity],['platform:gold',quantity]]);await audit(tx,uid(req),'gold.inventory_recorded',id,{grams:input.grams,reference:input.reference,proofId:input.proofId});});res.status(201).json({message:'Documented platform inventory recorded. This is an operator attestation.'});
   });
   router.get('/staff/physical',permission('withdrawals.view'),async(_req,res)=>res.json({requests:(await db.query('SELECT p.*,u.email FROM physical_gold_requests p JOIN users u ON u.id=p.user_id ORDER BY p.created_at DESC LIMIT 100')).rows.map(physicalRecord)}));
   router.post('/staff/physical/:id/review',permission('withdrawals.review'),async(req,res)=>{

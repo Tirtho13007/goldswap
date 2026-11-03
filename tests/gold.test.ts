@@ -51,6 +51,23 @@ test('platform gold orders, reserved five-day profit, gold payouts and physical 
       const g=(await req('/gold/account',undefined,user.cookie)).data;assert.equal(g.balance.available,'1000');
       assert.equal((await db.query('SELECT available FROM gold_stock WHERE id=1')).rows[0].available,'1000000000');
     });
+    await t.test('only the owner adjusts unallocated stock with idempotency, audit and balanced journals',async()=>{
+      const change={direction:'add',grams:'25.123456',reference:'STOCK-ADJUST-TEST-001',reason:'Internal stock receipt test',idempotencyKey:randomUUID()};
+      assert.equal((await req('/staff/gold/adjustments',change,user.cookie)).status,403);
+      const before=(await db.query('SELECT * FROM gold_stock WHERE id=1')).rows[0];
+      assert.equal((await req('/staff/gold/adjustments',change,staff.cookie)).status,201);
+      assert.equal((await req('/staff/gold/adjustments',change,staff.cookie)).status,201);
+      assert.equal((await req('/staff/gold/adjustments',{...change,grams:'26'},staff.cookie)).status,409);
+      assert.equal((await req('/staff/gold/adjustments',{...change,idempotencyKey:randomUUID()},staff.cookie)).status,409);
+      assert.equal((await req('/staff/gold/adjustments',{...change,direction:'remove',grams:'999999',reference:'STOCK-OVERDRAW-001',idempotencyKey:randomUUID()},staff.cookie)).status,409);
+      assert.equal((await req('/staff/gold/adjustments',{...change,direction:'remove',reference:'STOCK-REMOVE-TEST-001',idempotencyKey:randomUUID()},staff.cookie)).status,201);
+      const after=(await db.query('SELECT * FROM gold_stock WHERE id=1')).rows[0];
+      assert.equal(after.available,before.available);assert.equal(after.reserved,before.reserved);
+      assert.equal((await req('/gold/account',undefined,user.cookie)).data.balance.available,'1000');
+      assert.equal((await req('/staff/gold/adjustments',undefined,staff.cookie)).data.adjustments.length,2);
+      assert.equal((await db.query("SELECT 1 FROM audit_events WHERE action IN ('gold.inventory_add','gold.inventory_remove')")).rows.length,2);
+      assert.equal((await db.query('SELECT journal_id FROM money_lines GROUP BY journal_id HAVING sum(amount_atoms)<>0')).rows.length,0);
+    });
     await t.test('five-day maturity credits principal plus pre-reserved profit exactly once across concurrent workers',async()=>{
       assert.equal((await req('/staff/gold/settings',{tradesEnabled:true,ratesConfirmed:true,physicalFeeBasis:'additional_gold'},staff.cookie,'PUT')).status,200);
       const input={amount:'100',plan:'diamond',acceptTerms:true,idempotencyKey:randomUUID()};

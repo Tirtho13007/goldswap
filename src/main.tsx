@@ -8,4 +8,7 @@ import './public-refresh.css';
 import './operations.css';
 import './light-theme.css';
 import './wallet-experience.css';
+import './quality.css';
+import './public-design.css';
+import './interaction-polish.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);

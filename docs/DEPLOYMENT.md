@@ -2,6 +2,8 @@
 
 Target domain: **https://goldswap.app**. Source readiness and a real production acceptance test are separate gates. Do not label an installation live until the checks below pass on its actual infrastructure.
 
+3 November source update: migration 009_inventory_adjustments is required for owner stock controls. Readiness and deployment checks now require this migration. Build, backend types and 42 local integration tests pass. An external check from the development environment returned HTTP 502 at /health, /ready and /robots.txt; inspect hosting release/web logs and repeat direct checks before treating the site as live.
+
 ## Architecture
 
 - Node 24 web service: `npm start`; serves the built React app and API.
